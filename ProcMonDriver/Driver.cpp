@@ -1,13 +1,14 @@
 #include "driver.h"
 #include "driver.tmh"
 
+
 #ifdef ALLOC_PRAGMA
-// INIT - секуия, которую можно будет выгрузит из памати
 #pragma alloc_text (INIT, DriverEntry)
 #pragma alloc_text (PAGE, EvtWdfDriverUnload)
 #pragma alloc_text (PAGE, EvtWdfDriverObjectContextCleanup)
 #pragma alloc_text (PAGE, EvtWdfDriverObjectContextDestroy)
 #endif
+
 
 NTSTATUS
 DriverEntry(

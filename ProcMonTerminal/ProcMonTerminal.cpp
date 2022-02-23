@@ -1,72 +1,5 @@
-﻿// ProcMonTerminal.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//
+﻿#include "ProcMonTerminal.h"
 
-#include <iostream>
-#include <fstream>
-#include <Windows.h>
-#include <conio.h>
-#include <string>
-#include <list>
-#include <map>
-#include "../ProcMonDriver/Public.h"
-
-using namespace std;
-
-#define DRIVER_NAME "ProcMonDriver"
-#define DRIVER_SYM_NAME "\\\\.\\ProcMon"
-#define DRIVER_FILE_NAME "ProcMonDriver.sys"
-
-class ProcessInformationItem {
-
-public:
-    ProcessInformationItem() : ProcessID(0), ParentProcessId(0), ParentThreadId(0), isTerminated(false), noCreationInfo(false) {}
-
-    LONG64 ProcessID;
-    LONG64 ParentProcessId;
-    LONG64 ParentThreadId;
-
-    bool isTerminated;
-    bool noCreationInfo;
-
-    std::string ImageName;
-    std::string CommandLine;
-
-    friend std::ostream& operator <<(std::ostream& os, const ProcessInformationItem& pii)
-    {
-        os << "ProcessID: " << pii.ProcessID << " " << (pii.isTerminated ? "[ was terminated ]:" : "[ in process... ]:") << endl;
-        
-        if (!pii.noCreationInfo)
-        {
-            os << "Image Name: " << pii.ImageName << ";" << endl;
-            os << "Parent process ID: " << pii.ParentProcessId << ";" << endl;
-            os << "Parent thread ID: " << pii.ParentThreadId << ";" << endl;
-            os << "Command line: " << pii.CommandLine << "." << endl;
-        }
-        else
-        {
-            os << "no more info." << endl;
-        }
-
-        return os;
-    }
-};
-
-struct ProcessInformations {
-    std::map<LONG64, ProcessInformationItem> workingProcesses;
-    std::list<ProcessInformationItem> terminatedProcesses;
-};
-
-HANDLE attemptOpenKernelDriver(const std::string& DriverSymName, DWORD* Status);
-bool loadNonPnpDriver(const std::string& DriverFileName, const std::string& DriverPath, SC_HANDLE* SCManager, SC_HANDLE* ServiceHandle);
-bool unloadNonPnpDriver(const SC_HANDLE SCManager, const SC_HANDLE ServiceHandle);
-std::string convertUnicodeToAsci(const char* Unicode, const size_t Size);
-char waitToPressAnyKey();
-char wiatToPressСertainKey(const std::string& Keys);
-std::string GetAbsFilePath(const std::string& FileName);
-
-void parseReceiveData(const unsigned char* Data, const size_t Size, ProcessInformations& AllProcessInfo);
-
-void dumpAllInfoInFile(const ProcessInformations& AllProcessInfo);
 
 
 int main()
@@ -84,10 +17,11 @@ int main()
     SC_HANDLE scManager = NULL;
     SC_HANDLE serviceHandle = NULL;
 
-    size_t readInterval = 200; //mcs
-    bool dumpFile = true;
+    size_t readInterval = 200; // mcs
+    bool dumpFile = true;      // 
 
     ProcessInformations allProcessInfo;
+
 
     std::cout << "           --- ProcMonTerminal ---               " << endl;
     std::cout << " To start monitoring press key 's';              " << endl;
@@ -157,7 +91,7 @@ int main()
     }
 
     
-    if (!DeviceIoControl(hDriver, IOCTL_CONTROL_MESSAGE, NULL, NULL, NULL, NULL, NULL, NULL)) {
+    if (!DeviceIoControl(hDriver, IOCTL_CONTROL_MESSAGE_START, NULL, NULL, NULL, NULL, NULL, NULL)) {
         std::cout << "Error: DeviceIoControl return: " << GetLastError() << endl;
         goto __error_exit;
     }
@@ -204,6 +138,7 @@ __exit:
 
     return 0;
 }
+
 
 HANDLE attemptOpenKernelDriver(const std::string& DriverName, DWORD* Status)
 {
@@ -253,6 +188,7 @@ bool loadNonPnpDriver(const std::string& DriverFileName, const std::string& Driv
     return true;
 }
 
+
 bool unloadNonPnpDriver(const SC_HANDLE SCManager, const SC_HANDLE ServiceHandle)
 {
     SERVICE_STATUS status;
@@ -260,6 +196,7 @@ bool unloadNonPnpDriver(const SC_HANDLE SCManager, const SC_HANDLE ServiceHandle
     return ControlService(ServiceHandle, SERVICE_CONTROL_STOP, &status) && DeleteService(ServiceHandle)
         && CloseServiceHandle(ServiceHandle) && CloseServiceHandle(SCManager);
 }
+
 
 std::string convertUnicodeToAsci(const char* Unicode, const size_t Size)
 {
@@ -272,9 +209,11 @@ std::string convertUnicodeToAsci(const char* Unicode, const size_t Size)
     return res;
 }
 
+
 char waitToPressAnyKey(){
     return _getch();
 }
+
 
 char wiatToPressСertainKey(const std::string& Keys)
 {
@@ -286,6 +225,7 @@ char wiatToPressСertainKey(const std::string& Keys)
     }
 }
 
+
 std::string GetAbsFilePath(const std::string& FileName)
 {
     char fullPath[MAX_PATH];
@@ -296,18 +236,23 @@ std::string GetAbsFilePath(const std::string& FileName)
     return std::string(fullPath);
 }
 
+
 void parseReceiveData(const unsigned char* Data, const size_t Size, ProcessInformations& AllProcessInfo)
 {
     for (int i = 0; i < Size; ) {
-        BaseInfo* itemHeader = (BaseInfo*)(&Data[i]);
+        BaseEventInfo* itemHeader = (BaseEventInfo*)(&Data[i]);
 
         if (itemHeader->Size > Size - i)
             return;
 
+        //
+        // Событие создания нового процесса
+        //
         if (itemHeader->Type == EventType::ProcessCreate)
         {
-            ProcessCreateInfo* item = (ProcessCreateInfo*)itemHeader;
+            ProcessCreateEventInfo* item = (ProcessCreateEventInfo*)itemHeader;
 
+            // Добавляем процесс в таблицу работающих процессов
             auto& elem = AllProcessInfo.workingProcesses[item->ProcessId];
 
             elem.ProcessID = item->ProcessId;
@@ -321,12 +266,16 @@ void parseReceiveData(const unsigned char* Data, const size_t Size, ProcessInfor
 
             i += item->Size;
         }
-
+        
+        //
+        // Событие удаления процесса
+        //
         else if (itemHeader->Type == EventType::ProcessDestroy)
         {
-            ProcessDestroyInfo* item = (ProcessDestroyInfo*)itemHeader;
+            ProcessDestroyEventInfo* item = (ProcessDestroyEventInfo*)itemHeader;
 
             auto workingElement = AllProcessInfo.workingProcesses.find(item->ProcessId);
+            
             if (workingElement != AllProcessInfo.workingProcesses.end())
             {
                 workingElement->second.isTerminated = true;
@@ -354,7 +303,7 @@ void parseReceiveData(const unsigned char* Data, const size_t Size, ProcessInfor
 
 void dumpAllInfoInFile(const ProcessInformations& AllProcessInfo)
 {
-    std::ofstream fout("process-dump.txt");
+    std::ofstream fout(DUMP_FILE_NAME);
 
     fout << "Processing: " << AllProcessInfo.workingProcesses.size() << endl
         << "Terminated: " << AllProcessInfo.terminatedProcesses.size() << endl << endl;

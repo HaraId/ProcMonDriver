@@ -42,10 +42,10 @@
     <ClInclude Include="Trace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WdfClassExtension.h">
+    <ClInclude Include="ThreadLockClasses.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NotificationRoutes.h">
+    <ClInclude Include="HookRoutine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -59,7 +59,7 @@
     <ClCompile Include="Queue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NotificationRoutes.cpp">
+    <ClCompile Include="HookRoutine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

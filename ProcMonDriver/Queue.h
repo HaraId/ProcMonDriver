@@ -5,19 +5,15 @@
 #include <initguid.h>
 
 #include "Trace.h"
-#include "NotificationRoutes.h"
-#include "WdfClassExtension.h"
+#include "HookRoutine.h"
+#include "ThreadLockClasses.h"
 
 EXTERN_C_START
 
-typedef struct _DEVICE_QUEUE_EXTENSION {
-    PVOID data;
-}DEVICE_QUEUE_EXTENSION, *PDEVICE_QUEUE_EXTENSION;
-
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_QUEUE_EXTENSION, GetQueueData);
-
+// IRP_MJ_READ
 EVT_WDF_IO_QUEUE_IO_READ EvtWdfIoQueueIoRead;
-EVT_WDF_IO_QUEUE_IO_WRITE EvtWdfIoQueueIoWrite;
+
+// IRP_MJ_DEVICE_CONTROL
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL EvtWdfIoQueueDeviceControl;
 
 EXTERN_C_END

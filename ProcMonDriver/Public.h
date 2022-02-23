@@ -1,10 +1,11 @@
 #pragma once
 
-//DEFINE_GUID (GUID_DEVINTERFACE_ProcMonDriver,
-//    0x8c148369,0xd3f7,0x47b2,0x99,0xe6,0x37,0x2d,0x3e,0x7d,0x98,0xc5);
-// {8c148369-d3f7-47b2-99e6-372d3e7d98c5}
-
-#define IOCTL_CONTROL_MESSAGE CTL_CODE  (FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_ANY_ACCESS)
+//
+// Управляющий код начала процесса логгирования
+// Входных аргументов нет.
+// Выходных параметров нет.
+//
+#define IOCTL_CONTROL_MESSAGE_START CTL_CODE  (FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 
 EXTERN_C_START
@@ -12,32 +13,48 @@ EXTERN_C_START
 enum class EventType : char {
     Undefined,
     ProcessCreate,
-    ProcessDestroy,
-    ThreadCreate,
-    ThreadDestroy,
-    LoadImage
+    ProcessDestroy
 };
 
-class BaseInfo {
+//
+// Базовая структура события
+//
+class BaseEventInfo {
 public:
     size_t Size;
     EventType Type;
 };
 
-class ProcessCreateInfo : public BaseInfo {
+//
+// Cтруктура события создания процесса 
+// 
+// Полный размер структуры считается следующим образом:
+// Size = sizeof(ProcessCreateEventInfo) + ImageFileNameLength + CommandLineStringLength;
+// 
+// Строки:
+//  1) ImageFileName
+//  2) CommandLineString
+//  - записываются в конце структуры, в соответствующей последовательности
+//
+class ProcessCreateEventInfo : public BaseEventInfo {
 public:
     LONG64 ProcessId;
     LONG64 ParentProcessId;
     LONG64 ParentThreadId;
 
+    // Строка имени процесса в формате Unicode
     LONG64 ImageFileNameOffset;
     LONG64 ImageFileNameLength;
 
+    // Строка командных параметров процесса в формате Unicode
     LONG64 CommandLineStringOffset;
     LONG64 CommandLineStringLength;
 };
 
-class ProcessDestroyInfo : public BaseInfo {
+//
+// Cтруктура события удаления процесса 
+//
+class ProcessDestroyEventInfo : public BaseEventInfo {
 public:
     LONG64 ProcessId;
 };

@@ -40,17 +40,17 @@
   <ItemGroup>
     <ClCompile Include="Device.cpp" />
     <ClCompile Include="Driver.cpp" />
-    <ClCompile Include="NotificationRoutes.cpp" />
+    <ClCompile Include="HookRoutine.cpp" />
     <ClCompile Include="Queue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
-    <ClInclude Include="NotificationRoutes.h" />
+    <ClInclude Include="HookRoutine.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="Trace.h" />
-    <ClInclude Include="WdfClassExtension.h" />
+    <ClInclude Include="ThreadLockClasses.h" />
   </ItemGroup>
   <ItemGroup>
     <Inf Include="ProcMonDriver.inf" />

@@ -1,0 +1,86 @@
+;
+; ProcMonDriver.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=ProcMonDriver.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+ProcMonDriver_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+ProcMonDriver.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%ProcMonDriver.DeviceDesc%=ProcMonDriver_Device, Root\ProcMonDriver ; TODO: edit hw-id
+
+[ProcMonDriver_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+ProcMonDriver.sys
+
+;-------------- Service installation
+[ProcMonDriver_Device.NT.Services]
+AddService = ProcMonDriver,%SPSVCINST_ASSOCSERVICE%, ProcMonDriver_Service_Inst
+
+; -------------- ProcMonDriver driver install sections
+[ProcMonDriver_Service_Inst]
+DisplayName    = %ProcMonDriver.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\ProcMonDriver.sys
+
+;
+;--- ProcMonDriver_Device Coinstaller installation ------
+;
+
+[ProcMonDriver_Device.NT.CoInstallers]
+AddReg=ProcMonDriver_Device_CoInstaller_AddReg
+CopyFiles=ProcMonDriver_Device_CoInstaller_CopyFiles
+
+[ProcMonDriver_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[ProcMonDriver_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[ProcMonDriver_Device.NT.Wdf]
+KmdfService =  ProcMonDriver, ProcMonDriver_wdfsect
+[ProcMonDriver_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "ProcMonDriver Installation Disk"
+ProcMonDriver.DeviceDesc = "ProcMonDriver Device"
+ProcMonDriver.SVCDESC = "ProcMonDriver Service"
